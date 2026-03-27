@@ -1,52 +1,88 @@
-import { createRoom, joinRoom, leaveRoom, getRoom } from './gameEngine.js';
+import { 
+  createRoom, joinRoom, leaveRoom, getRoom, startGame, 
+  rollDice, processBankTx, processBlockchainTx 
+} from './gameEngine.js';
 
 export function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
-    console.log(`🔌 Novo cliente conectado: ${socket.id}`);
+    console.log(`🔌 Novo cliente: ${socket.id}`);
 
-    // ── PROFESSOR: Cria a sala ─────────────────────────────────────────
+    // ── LOBBY E SALAS ────────────────────────────────────────────────
     socket.on('createRoom', (roomId, callback) => {
       const room = createRoom(roomId);
-      if (!room) {
-        if (callback) callback({ success: false, error: 'Sala já existe ou erro interno.' });
-        return;
-      }
-      
+      if (!room) return callback({ success: false, error: 'Sala já existe.' });
       room.professorSocketId = socket.id;
       socket.join(roomId);
-      console.log(`👨‍🏫 Professor criou a sala: ${roomId}`);
-      
-      if (callback) callback({ success: true, room });
+      callback({ success: true, room });
     });
 
-    // ── ALUNO: Entra na sala ───────────────────────────────────────────
     socket.on('joinRoom', ({ roomId, playerName }, callback) => {
       const result = joinRoom(roomId, socket.id, playerName);
-      
-      if (result.error) {
-        if (callback) callback({ success: false, error: result.error });
-        return;
-      }
-
+      if (result.error) return callback({ success: false, error: result.error });
       socket.join(roomId);
-      console.log(`🎓 Aluno ${playerName} entrou na sala ${roomId}`);
-
-      // Avisa a sala inteira (incluindo o professor) que alguém entrou
       io.to(roomId).emit('playerJoined', result.room.players);
-
-      if (callback) callback({ success: true, player: result.player, room: result.room });
+      callback({ success: true, player: result.player, room: result.room });
     });
 
-    // ── GERAL: Desconexão ──────────────────────────────────────────────
+    // ── PROFESSOR CONTROLS ───────────────────────────────────────────
+    socket.on('startGame', (roomId) => {
+      const room = getRoom(roomId);
+      if (room && room.professorSocketId === socket.id) {
+        startGame(roomId, io);
+      }
+    });
+
+    // ── ALUNO CONTROLS (GAMEPLAY) ────────────────────────────────────
+    socket.on('rollDice', (roomId, callback) => {
+      const result = rollDice(roomId, socket.id);
+      if (result) {
+        io.to(roomId).emit('playerMoved', { 
+          playerId: socket.id, 
+          dice: result.dice, 
+          position: result.position 
+        });
+        callback({ success: true, dice: result.dice });
+      } else {
+        callback({ success: false, error: "Aguarde sua transação finalizar." });
+      }
+    });
+
+    socket.on('processBankTx', (roomId, data) => {
+      const tx = processBankTx(roomId, socket.id, data);
+      if (tx) {
+        // Envia o estado atualizado para animar a entrada no banco
+        const room = getRoom(roomId);
+        io.to(roomId).emit('gameStateUpdate', { 
+          players: room.players, 
+          bankTxs: room.bankTxs 
+        });
+      }
+    });
+
+    socket.on('processBlockchainTx', async (roomId, data) => {
+      // Callback invocado a cada 500 hashes testados pelo Node.js
+      const onProgress = (nonce) => {
+        // Manda o progresso apenas para a sala ver a mineração ao vivo
+        io.to(roomId).emit('miningProgress', { playerId: socket.id, nonce });
+      };
+
+      const newBlock = await processBlockchainTx(roomId, socket.id, data, onProgress);
+      
+      if (newBlock) {
+        const room = getRoom(roomId);
+        io.to(roomId).emit('blockMined', { 
+          block: newBlock, 
+          players: room.players, // Saldo foi atualizado (gas fee)
+          blocks: room.blocks
+        });
+      }
+    });
+
+    // ── DESCONEXÃO ───────────────────────────────────────────────────
     socket.on('disconnect', () => {
-      console.log(`❌ Cliente desconectado: ${socket.id}`);
-      // Busca e remove o jogador de todas as salas onde estava
-      // Nota: numa implementação real mais robusta, mantemos o index da sala do socket
       for (const roomId of socket.rooms) {
         const room = leaveRoom(roomId, socket.id);
-        if (room) {
-          io.to(roomId).emit('playerLeft', room.players);
-        }
+        if (room) io.to(roomId).emit('playerLeft', room.players);
       }
     });
   });
