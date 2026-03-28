@@ -13,6 +13,172 @@
     .board { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
     .space { width: 100px; height: 100px; border: 2px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 12px; background: #e9ecef;}
     .log-area { max-height: 200px; overflow-y: auto; background: #333; color: #00ff00; padding: 10px; font-family: monospace; }
+
+    /* ══════════════════════════════════════════════
+       TEMA NANO BANANA — Painel de Filas em Tempo Real
+       ══════════════════════════════════════════════ */
+    .panel-dark {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .panel-dark h3 {
+      color: #ffd700;
+      margin: 0 0 16px 0;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 10px;
+    }
+
+    /* Layout de duas colunas */
+    .queues-container {
+      display: flex;
+      gap: 16px;
+    }
+    .queue-column {
+      flex: 1;
+      min-width: 0;
+    }
+    .queue-column h4 {
+      color: #8b949e;
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── Cards de Transação Bancária ── */
+    .bank-tx-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .bank-tx-card.recusado {
+      border-color: #f85149;
+      background: #1f0d0d;
+    }
+    .bank-tx-card.liquidado {
+      border-color: #3fb950;
+      background: #0d1a0d;
+      opacity: 0.65;
+    }
+    .tx-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tx-player {
+      color: #58a6ff;
+      font-weight: bold;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .tx-desc {
+      color: #8b949e;
+      font-size: 11px;
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Barra de progresso por estágios */
+    .stage-bar {
+      display: flex;
+      gap: 3px;
+    }
+    .stage-step {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: #21262d;
+      transition: background 0.4s;
+    }
+    .stage-step.done  { background: #3fb950; }
+    .stage-step.active { background: #ffd700; animation: pulse-step 0.8s ease-in-out infinite alternate; }
+    .stage-step.refused { background: #f85149; }
+    @keyframes pulse-step {
+      from { opacity: 1; }
+      to   { opacity: 0.4; }
+    }
+
+    .tx-stage-label {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 5px;
+    }
+    .tx-stage-label.status-ok  { color: #3fb950; }
+    .tx-stage-label.status-err { color: #f85149; }
+    .tx-stage-label.status-wait { color: #ffd700; }
+
+    /* ── Cards de Bloco ── */
+    .block-card {
+      background: #161b22;
+      border: 1px solid #1f6feb;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+    .block-index {
+      color: #58a6ff;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    .block-hash {
+      color: #ffd700;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    .block-meta {
+      color: #8b949e;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    /* Card de mineração em andamento */
+    .mining-card {
+      background: #161b22;
+      border: 2px solid #ffd700;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      animation: pulse-border 1s ease-in-out infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: #ffd700; box-shadow: 0 0 6px rgba(255,215,0,0.3); }
+      50%       { border-color: #ff8c00; box-shadow: 0 0 12px rgba(255,140,0,0.5); }
+    }
+    .mining-label {
+      color: #ffd700;
+      font-family: monospace;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+    .mining-sub {
+      color: #8b949e;
+      font-size: 11px;
+    }
+
+    .empty-msg {
+      color: #484f58;
+      font-size: 12px;
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    @media (max-width: 600px) {
+      .queues-container { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
@@ -53,6 +219,32 @@
       <h3>Terminal de Eventos</h3>
       <div id="logArea" class="log-area"></div>
     </div>
+
+    <!-- ══ PAINEL DE FILAS — aparece só depois que o jogo inicia ══ -->
+    <div id="queuesPanel" class="panel-dark hidden">
+      <h3>📊 Filas em Tempo Real</h3>
+      <div class="queues-container">
+
+        <!-- Coluna esquerda: Fila do Banco -->
+        <div class="queue-column">
+          <h4>🏦 Fila do Banco (SPB/TED)</h4>
+          <div id="bankQueueList">
+            <p class="empty-msg">Nenhuma transação bancária ainda.</p>
+          </div>
+        </div>
+
+        <!-- Coluna direita: Mempool / Blockchain -->
+        <div class="queue-column">
+          <h4>⛓️ Mempool &amp; Blocos Confirmados</h4>
+          <div id="miningStatus"></div>
+          <div id="blockchainList">
+            <p class="empty-msg">Aguardando blocos...</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

@@ -22,10 +22,99 @@ const paymentTitle = document.getElementById('paymentTitle');
 const btnPayBank = document.getElementById('btnPayBank');
 const btnPayBlockchain = document.getElementById('btnPayBlockchain');
 
+// Painel de Filas
+const queuesPanel = document.getElementById('queuesPanel');
+const bankQueueList = document.getElementById('bankQueueList');
+const miningStatus = document.getElementById('miningStatus');
+const blockchainList = document.getElementById('blockchainList');
+
 // Estado local do Cliente
 let currentRoom = '';
 let myPlayerId = '';
 let boardData = [];
+
+// ─── NOMES DOS ESTÁGIOS BANCÁRIOS (deve espelhar o gameEngine.js) ───────────
+const BANK_STAGES = ["Solicitação", "Caixa", "Gerente", "Compliance", "BACEN/SPB", "Liquidado"];
+
+// ─── RENDERIZAÇÃO DA FILA DO BANCO ─────────────────────────────────────────
+function renderBankQueue(bankTxs) {
+  if (!bankTxs || bankTxs.length === 0) {
+    bankQueueList.innerHTML = '<p class="empty-msg">Nenhuma transação bancária ainda.</p>';
+    return;
+  }
+
+  // Mostra as últimas 6 transações (mais recentes primeiro, já chegam com unshift)
+  const visible = bankTxs.slice(0, 6);
+
+  bankQueueList.innerHTML = visible.map(tx => {
+    const isRecusado = tx.recusado;
+    const isLiquidado = tx.stage === 5 && !isRecusado;
+    const cardClass = 'bank-tx-card' + (isRecusado ? ' recusado' : isLiquidado ? ' liquidado' : '');
+
+    // Monta os 6 segmentos da barra de progresso
+    const stepsHtml = BANK_STAGES.map((_, i) => {
+      let cls = 'stage-step';
+      if (isRecusado)        cls += i <= tx.stage ? ' refused' : '';
+      else if (i < tx.stage) cls += ' done';
+      else if (i === tx.stage && !isLiquidado) cls += ' active';
+      else if (isLiquidado)  cls += ' done';
+      return `<div class="${cls}" title="${BANK_STAGES[i]}"></div>`;
+    }).join('');
+
+    let statusText, statusClass;
+    if (isRecusado)    { statusText = '❌ Recusado pelo banco';  statusClass = 'status-err'; }
+    else if (isLiquidado) { statusText = '✅ Liquidado';         statusClass = 'status-ok';  }
+    else               { statusText = `⏳ ${BANK_STAGES[tx.stage]}`; statusClass = 'status-wait'; }
+
+    return `
+      <div class="${cardClass}">
+        <div class="tx-header">
+          <span class="tx-player">👤 ${tx.playerName}</span>
+          <span class="tx-desc">${tx.descricao}</span>
+        </div>
+        <div class="stage-bar">${stepsHtml}</div>
+        <div class="tx-stage-label ${statusClass}">${statusText}</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── RENDERIZAÇÃO DO STATUS DE MINERAÇÃO ───────────────────────────────────
+function renderMiningStatus(data) {
+  if (!data) {
+    miningStatus.innerHTML = '';
+    return;
+  }
+  const quem = data.playerId === myPlayerId ? 'Você está minerando' : 'Minerando';
+  miningStatus.innerHTML = `
+    <div class="mining-card">
+      <div class="mining-label">⛏️ ${quem}... ${data.nonce.toLocaleString('pt-BR')} hashes</div>
+      <div class="mining-sub">Buscando prefixo "00" — Proof of Work em andamento</div>
+    </div>`;
+}
+
+// ─── RENDERIZAÇÃO DA BLOCKCHAIN ────────────────────────────────────────────
+function renderBlockchain(blocks) {
+  if (!blocks || blocks.length === 0) {
+    blockchainList.innerHTML = '<p class="empty-msg">Aguardando blocos...</p>';
+    return;
+  }
+
+  // Exibe os últimos 5 blocos, do mais novo para o mais antigo
+  const recent = blocks.slice(-5).reverse();
+  blockchainList.innerHTML = recent.map(b => {
+    const isGenesis = b.index === 0;
+    const desc = isGenesis ? '🌱 Bloco Genesis — Jogo Iniciado' : `💸 ${b.data.descricao || 'Transação'}`;
+    const metaLine = isGenesis
+      ? `Nonce: ${b.nonce}`
+      : `Por: ${b.data.playerName || 'Sistema'} &nbsp;|&nbsp; Nonce: ${b.nonce}`;
+    return `
+      <div class="block-card">
+        <div class="block-index">Bloco #${b.index}</div>
+        <div class="block-hash">${b.hash}</div>
+        <div class="block-meta">${desc}<br>${metaLine}</div>
+      </div>`;
+  }).join('');
+}
 
 // Função auxiliar para escrever no terminal da tela
 function logMessage(msg) {
@@ -125,6 +214,8 @@ btnPayBlockchain.addEventListener('click', () => {
 socket.on('gameStarted', (data) => {
   logMessage("🚀 O JOGO COMEÇOU! O Bloco Genesis foi minerado.");
   btnRollDice.disabled = false;
+  queuesPanel.classList.remove('hidden');
+  if (data.blocks) renderBlockchain(data.blocks);
 });
 
 socket.on('playerMoved', (data) => {
@@ -151,33 +242,32 @@ socket.on('playerMoved', (data) => {
 });
 
 socket.on('gameStateUpdate', (data) => {
-  // Atualiza saldo na tela se for o jogador atual
   if (myPlayerId && data.players[myPlayerId]) {
     const me = data.players[myPlayerId];
     displayBalance.textContent = me.balance;
-    
-    // Se o jogador estava processando algo e agora terminou de pagar via banco
     if (!me.isProcessing && !me.pendingPayment && paymentPanel.classList.contains('hidden')) {
-        btnRollDice.disabled = false;
+      btnRollDice.disabled = false;
     }
   }
-  
-  // Aqui poderíamos atualizar a interface visual do banco (Fase 5 talvez!)
+  if (data.bankTxs !== undefined) renderBankQueue(data.bankTxs);
 });
 
 socket.on('miningProgress', (data) => {
   if (data.playerId === myPlayerId) {
     logMessage(`⚙️ Minerando... Hashes testados: ${data.nonce}`);
   }
+  renderMiningStatus(data);
 });
 
 socket.on('blockMined', (data) => {
   logMessage(`⛓️ BLOCO MINERADO! Transação de ${data.block.data.playerName} liquidada no bloco #${data.block.index}. Hash: ${data.block.hash.substring(0, 10)}...`);
-  
+  renderMiningStatus(null);
+  if (data.blocks) renderBlockchain(data.blocks);
+
   if (myPlayerId && data.players[myPlayerId]) {
-      displayBalance.textContent = data.players[myPlayerId].balance;
-      if (!data.players[myPlayerId].isProcessing) {
-          btnRollDice.disabled = false; // Libera o dado
-      }
+    displayBalance.textContent = data.players[myPlayerId].balance;
+    if (!data.players[myPlayerId].isProcessing) {
+      btnRollDice.disabled = false;
+    }
   }
 });
