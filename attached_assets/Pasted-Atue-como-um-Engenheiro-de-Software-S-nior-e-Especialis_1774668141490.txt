@@ -1,0 +1,34 @@
+Atue como um Engenheiro de Software Sênior e Especialista em QA. 
+Sua missão é realizar uma auditoria completa, criar testes automatizados (ou rotinas de simulação) e corrigir qualquer bug no projeto "O Mundo Cripto do Careco".
+
+Antes de começar, leia o arquivo `CONTEXTO_PROJETO.md` (se disponível) ou analise os arquivos `server.js`, `server/src/gameEngine.js`, `server/src/socketHandler.js`, `public/index.html` e `public/app.js` para entender a arquitetura (Node.js + Express + Socket.IO + Vanilla JS).
+
+Siga rigorosamente as etapas abaixo, uma de cada vez, reportando o progresso:
+
+### ETAPA 1: Análise Estática de Código
+- Revise a lógica do `gameEngine.js` e do `socketHandler.js`.
+- Procure por: Race conditions (condições de corrida) nos Sockets, possíveis erros de variável indefinida (ex: `roomId` não encontrado), vazamento de memória no `setInterval` (Relógio Global) e falhas de segurança básicas.
+
+### ETAPA 2: Criação de Testes de Integração / Simulação
+- Crie um arquivo temporário de teste (ex: `test-runner.js`) que simule o fluxo completo do jogo diretamente nas funções do backend:
+  1. Criar uma sala (Professor).
+  2. Conectar 2 jogadores (Alunos).
+  3. Iniciar o jogo (Minerar Bloco Genesis).
+  4. Rolar dados e atualizar posições.
+  5. Iniciar uma transação via Banco (verificar se o decaimento de 1 CCD por segundo está funcionando e se a etapa avança).
+  6. Iniciar uma transação via Blockchain (verificar se o PoW resolve corretamente e deduz os 2 CCD).
+
+### ETAPA 3: Execução e Diagnóstico
+- Execute a simulação ou testes criados.
+- Identifique qualquer gargalo, erro no console, ou comportamento onde o estado do backend não reflete corretamente no frontend (ex: jogadores perdendo a sincronia visual no tabuleiro).
+
+### ETAPA 4: Correção Automática (Fix)
+- Corrija os bugs encontrados nos arquivos originais (`gameEngine.js`, `socketHandler.js` ou `app.js`).
+- Refatore trechos de código que estejam frágeis, adicionando validações (ex: verificar se o jogador tem saldo antes de permitir uma ação) e blocos `try/catch` onde for necessário.
+
+### ⚠️ REGRAS DE OURO:
+1. NÃO mude a stack tecnológica (Mantenha Vanilla JS, Node e Socket.IO. Nada de React ou APIs REST).
+2. NÃO altere a regra de negócio didática (O Banco DEVE ser lento e corroer o saldo com o tempo; a Blockchain DEVE exigir o cálculo de hash).
+3. Se fizer alterações no frontend (`app.js`), garanta que o DOM seja atualizado corretamente sem quebrar o CSS atual.
+
+Comece confirmando que entendeu a arquitetura e inicie a Etapa 1.
