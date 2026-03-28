@@ -1,0 +1,17 @@
+packages:
+  "framer-motion": "For smooth block additions, layout animations, and mining progress visualizers"
+  "lucide-react": "For crisp, modern icons"
+  "date-fns": "For formatting block and transaction timestamps"
+  "clsx": "For merging dynamic Tailwind classes"
+  "tailwind-merge": "For resolving Tailwind class conflicts"
+  "react-hook-form": "For robust transaction and settings forms"
+  "@hookform/resolvers": "For Zod schema validation integration"
+
+images:
+  - path: "artifacts/blockchain-simulator/public/images/crypto-bg.png"
+    description: "Extremely subtle dark abstract background featuring faint geometric nodes, cryptographic grids, and glowing cyan and purple circuit lines. Deep black and charcoal tones. Minimalist and professional."
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - Creating a custom hook wrapper to ensure automatic cache invalidation of the blockchain query upon mutations

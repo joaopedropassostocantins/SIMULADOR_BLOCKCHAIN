@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Blockchain Simulator API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: blockchain
+    description: Blockchain operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,102 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /blockchain:
+    get:
+      operationId: getBlockchain
+      tags: [blockchain]
+      summary: Get blockchain
+      description: Returns the full blockchain
+      responses:
+        "200":
+          description: Blockchain data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blockchain"
+  /blockchain/mine:
+    post:
+      operationId: mineBlock
+      tags: [blockchain]
+      summary: Mine a new block
+      description: Mines a new block with pending transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MineBlockRequest"
+      responses:
+        "200":
+          description: Newly mined block
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Block"
+  /blockchain/transactions:
+    post:
+      operationId: addTransaction
+      tags: [blockchain]
+      summary: Add a transaction
+      description: Adds a new transaction to the pending pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionRequest"
+      responses:
+        "201":
+          description: Transaction added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+  /blockchain/validate:
+    get:
+      operationId: validateChain
+      tags: [blockchain]
+      summary: Validate blockchain
+      description: Validates the integrity of the blockchain
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+  /blockchain/reset:
+    post:
+      operationId: resetBlockchain
+      tags: [blockchain]
+      summary: Reset blockchain
+      description: Resets the blockchain to genesis block only
+      responses:
+        "200":
+          description: Blockchain reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blockchain"
+  /blockchain/difficulty:
+    put:
+      operationId: setDifficulty
+      tags: [blockchain]
+      summary: Set mining difficulty
+      description: Sets the proof-of-work difficulty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DifficultyRequest"
+      responses:
+        "200":
+          description: Difficulty updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DifficultyResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +130,125 @@ components:
           type: string
       required:
         - status
-
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        sender:
+          type: string
+        recipient:
+          type: string
+        amount:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sender
+        - recipient
+        - amount
+        - timestamp
+    TransactionRequest:
+      type: object
+      properties:
+        sender:
+          type: string
+        recipient:
+          type: string
+        amount:
+          type: number
+      required:
+        - sender
+        - recipient
+        - amount
+    Block:
+      type: object
+      properties:
+        index:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        previousHash:
+          type: string
+        hash:
+          type: string
+        nonce:
+          type: integer
+        difficulty:
+          type: integer
+        miningTime:
+          type: number
+      required:
+        - index
+        - timestamp
+        - transactions
+        - previousHash
+        - hash
+        - nonce
+        - difficulty
+        - miningTime
+    MineBlockRequest:
+      type: object
+      properties:
+        minerAddress:
+          type: string
+        reward:
+          type: number
+      required:
+        - minerAddress
+    Blockchain:
+      type: object
+      properties:
+        chain:
+          type: array
+          items:
+            $ref: "#/components/schemas/Block"
+        pendingTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        difficulty:
+          type: integer
+        miningReward:
+          type: number
+      required:
+        - chain
+        - pendingTransactions
+        - difficulty
+        - miningReward
+    ValidationResult:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - isValid
+        - errors
+    DifficultyRequest:
+      type: object
+      properties:
+        difficulty:
+          type: integer
+      required:
+        - difficulty
+    DifficultyResponse:
+      type: object
+      properties:
+        difficulty:
+          type: integer
+        message:
+          type: string
+      required:
+        - difficulty
+        - message

@@ -1,0 +1,28 @@
+A high-resolution, detailed photograph of a large, clear projection screen in a modern, well-lit classroom setting. The screen displays the central professor's view of a virtual board game called "Blockchain vs Banco Tradicional: O Jogo de Tabuleiro Virtual (Prof. João Pedro)" and "O Mundo Cripto do Careco e as Bananas Digitais" with stylized banana illustrations flanking the title text. The style is a bright, whimsical 3D cartoon with glowing digital effects and integrated banana coins and shapes.
+On the projected screen:
+• Top Center: A Real-time Relógio Global shows "TEMPO DE PARTIDA: 05:45".
+• Left Side (Interactive): A baralho JSON interativo is visible, showing a face-up card titled "Carta Surpresa: Erro a seu favor! Ganhe 10 CCD!". Below it, a large QR Code with the legend "ESCANEIE PARA ENTRAR ROOM CODE: BANANA123 (GDD requirement)".
+• Center (The Board): A serpentine path made of banana blocks winding through the screen. Each tile on the board is a detailed 3D diorama scene:
+• "Início" with a large banana start banner.
+• Conta de Luz (5 CCD) with a power pole.
+• Imposto Mensal (15 CCD) with a money bag.
+• Conta icons like "Conta de Luz (15 CCD)" and "Conta de Mensal (15 CCD)".
+• Imposto (15 CCD) with a money bag.
+• Bônus (Ganhe 10 CCD) with a treasure chest.
+• Ransomware (Hacker exigi 10 CCD) with a locked computer.
+• Banco Internacional (20 CCD) with a globe and coins.
+• Remessa Internacional (20 CCD) with a globe and coins.
+• Multiple additional Ransomware tiles.
+• Lightbulb and Dollar icons.
+• Ransomware Mediasete 20 CCD.
+• Two globe tiles (Remessa Internacional 20 CCD).
+• Player Avatars (Real-time): Cute, tiny cartoon Careco characters with banana features move along the path.
+• Right Side (Real-time / Tabela de Saldo): A detailed Tabela de Saldo (Ranking) with columns for Position (1º to 6º), Player Name, CCD Balance, and Current Position. Example entries: Maria (120 CCD) Casa 8, João (100 CCD) Casa 5, Pedro (102 CCD) Casa 4, etc. with varied avatars.
+• Bottom (Log): A separate inset area with "Log de Eventos Recentes": "Maria minerou Bloco Genesis no tempo!", "Pedro escolheu Banco e pagou 5 CCD + atraso! (GDD requirement)".
+In a separate inset in the lower right corner:
+• A stylized inset titled "Student Control (Mobile-First)".
+• Two smartphone screens side-by-side.
+• Left screen: Shows a Clarecos avatar, balance "110 CCD", a virtual die, and decision buttons "Pagar via Banco" and "Pagar via Blockchain".
+• Right screen: Shows a slightly different layout of the same information: balance "110 CCD", a die, and the same buttons "Pagar via Banco" and "Pagar via Blockchain" with different color accents.
+Overall styling:
+A modern classroom setting blurred in the background, with the projected screen nítida and bright. All text in Portuguese as requested. The visual style is playful, detailed, and vibrant. Glowing digital particles, floating banana coins. Rich texture and deep color. Make sure the labels and CCD values on the projected board match the list provided.

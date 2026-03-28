@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Blockchain Simulator"
+version = "1.0.0"
+id = "artifacts/blockchain-simulator"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24019
+
+[services.development]
+run = "pnpm --filter @workspace/blockchain-simulator run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/blockchain-simulator", "run", "build" ]
+publicDir = "artifacts/blockchain-simulator/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24019"
+BASE_PATH = "/"
