@@ -5,6 +5,7 @@ import { ScoreTable } from "@/components/game/ScoreTable";
 import { SurpriseCardDeck } from "@/components/game/SurpriseCardDeck";
 import { EventLog } from "@/components/game/EventLog";
 import { MobileControl } from "@/components/game/MobileControl";
+import { QueuesPanel } from "@/components/game/QueuesPanel";
 import { QrCode, RotateCcw, Clock, Banana, Wifi, WifiOff, Users, Play, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -360,8 +361,16 @@ export default function Dashboard() {
       </main>
 
       {/* FOOTER */}
-      <footer className="h-44 p-4 pt-0 relative z-10 max-w-[1920px] mx-auto w-full">
-        <EventLog events={roomState.eventLog} />
+      <footer className="p-4 pt-0 relative z-10 max-w-[1920px] mx-auto w-full flex flex-col gap-3">
+        <QueuesPanel
+          bankTxs={roomState.bankTxs ?? []}
+          confirmedBlocks={roomState.confirmedBlocks ?? []}
+          miningNonce={state.miningProgress.nonce}
+          isMining={state.miningProgress.isMining}
+        />
+        <div className="h-44">
+          <EventLog events={roomState.eventLog} />
+        </div>
       </footer>
 
       {/* MOBILE CONTROL */}

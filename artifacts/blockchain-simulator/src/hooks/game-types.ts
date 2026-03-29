@@ -44,6 +44,25 @@ export interface PowChallenge {
   targetCost: number;
 }
 
+export const BANK_STAGES = ["Solicitação", "Caixa", "Gerente", "Compliance", "BACEN/SPB", "Liquidado"];
+
+export interface BankTx {
+  id: string;
+  playerName: string;
+  descricao: string;
+  stage: number;
+  recusado: boolean;
+}
+
+export interface ConfirmedBlock {
+  index: number;
+  hash: string;
+  playerName: string;
+  descricao: string;
+  nonce: number;
+  timestamp: number;
+}
+
 export interface RoomState {
   code: string;
   players: Player[];
@@ -57,6 +76,8 @@ export interface RoomState {
   bankSecondsLeft: number;
   hasPowChallenge: boolean;
   powChallenge: PowChallenge | null;
+  bankTxs: BankTx[];
+  confirmedBlocks: ConfirmedBlock[];
 }
 
 // Legacy compatibility aliases

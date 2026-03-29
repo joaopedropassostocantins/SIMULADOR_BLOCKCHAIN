@@ -48,6 +48,25 @@ export interface PowChallenge {
   targetCost: number;
 }
 
+export const BANK_STAGES = ["Solicitação", "Caixa", "Gerente", "Compliance", "BACEN/SPB", "Liquidado"];
+
+export interface BankTx {
+  id: string;
+  playerName: string;
+  descricao: string;
+  stage: number;
+  recusado: boolean;
+}
+
+export interface ConfirmedBlock {
+  index: number;
+  hash: string;
+  playerName: string;
+  descricao: string;
+  nonce: number;
+  timestamp: number;
+}
+
 export interface Room {
   code: string;
   players: Player[];
@@ -62,6 +81,8 @@ export interface Room {
   currentPowChallenge: PowChallenge | null;
   bankDecayInterval: ReturnType<typeof setInterval> | null;
   bankSecondsLeft: number;
+  bankTxs: BankTx[];
+  confirmedBlocks: ConfirmedBlock[];
 }
 
 // ─── Board Definition ─────────────────────────────────────────────────────────
@@ -130,6 +151,8 @@ export function createRoom(socketId: string, playerName: string, avatar: string)
     currentPowChallenge: null,
     bankDecayInterval: null,
     bankSecondsLeft: 0,
+    bankTxs: [],
+    confirmedBlocks: [],
   };
   rooms.set(code, room);
   return room;
@@ -287,18 +310,36 @@ export function startBankPayment(
   room.phase = "bank_processing";
   room.bankSecondsLeft = BANK_PROCESSING_SECONDS;
 
+  // Create a BankTx entry to track stage progression in the Queues Panel
+  const bankTx: BankTx = {
+    id: crypto.randomUUID(),
+    playerName: cp.name,
+    descricao: room.board[cp.position]?.name ?? "Pagamento",
+    stage: 0,
+    recusado: false,
+  };
+  room.bankTxs.unshift(bankTx);
+  if (room.bankTxs.length > 10) room.bankTxs.pop();
+
   addEvent(room, `🏦 ${cp.name} optou pelo Banco Tradicional. Taxa de ${BANK_FEE} CCD cobrada. Processando (${BANK_PROCESSING_SECONDS}s)...`, "loss", cp.name);
 
   // Decay: 1 CCD/second for BANK_PROCESSING_SECONDS seconds
+  // Each tick also advances the bank transaction stage (0→5 over 5 ticks)
   if (room.bankDecayInterval) clearInterval(room.bankDecayInterval);
   room.bankDecayInterval = setInterval(() => {
     room.bankSecondsLeft -= 1;
     cp.balance -= 1; // corrosão por atraso
+
+    // Advance BankTx stage: stages 0-4 advance per tick, stage 5 = Liquidado on completion
+    const stageStep = BANK_PROCESSING_SECONDS - room.bankSecondsLeft; // 1-5
+    bankTx.stage = Math.min(stageStep, BANK_STAGES.length - 2); // cap at 4 until complete
+
     onTick(room, room.bankSecondsLeft, 1);
 
     if (room.bankSecondsLeft <= 0) {
       clearInterval(room.bankDecayInterval!);
       room.bankDecayInterval = null;
+      bankTx.stage = BANK_STAGES.length - 1; // "Liquidado"
       addEvent(room, `✅ Transação bancária de ${cp.name} concluída com ${BANK_PROCESSING_SECONDS}s de atraso. Total perdido: ${baseCost + BANK_FEE + BANK_PROCESSING_SECONDS} CCD`, "loss", cp.name);
       advanceTurn(room);
       onComplete(room);
@@ -353,6 +394,18 @@ export function verifyAndApplyBlockchainPayment(
   // Valid PoW — apply exact cost, no fee
   cp.balance -= targetCost;
   room.currentPowChallenge = null;
+
+  // Record the confirmed block in the queues panel
+  const blockDescricao = room.board[cp.position]?.name ?? "Pagamento";
+  room.confirmedBlocks.unshift({
+    index: room.confirmedBlocks.length,
+    hash,
+    playerName: cp.name,
+    descricao: `Pagto: ${blockDescricao}`,
+    nonce,
+    timestamp: Date.now(),
+  });
+  if (room.confirmedBlocks.length > 10) room.confirmedBlocks.pop();
 
   addEvent(room, `✅ ${cp.name} minerou com sucesso! Hash: ${hash.substring(0, 16)}... Nonce: ${nonce}. Pagou exatos ${targetCost} CCD sem taxas!`, "gain", cp.name);
   advanceTurn(room);
@@ -419,5 +472,7 @@ export function getRoomSafeState(room: Room) {
     bankSecondsLeft: room.bankSecondsLeft,
     hasPowChallenge: !!room.currentPowChallenge,
     powChallenge: room.currentPowChallenge,
+    bankTxs: room.bankTxs,
+    confirmedBlocks: room.confirmedBlocks,
   };
 }
