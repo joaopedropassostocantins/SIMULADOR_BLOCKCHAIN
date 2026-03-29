@@ -373,8 +373,8 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* MOBILE CONTROL */}
-      {currentPlayer && (
+      {/* MOBILE CONTROL — only for students, not the professor */}
+      {currentPlayer && !currentPlayer.isProfessor && (
         <MobileControl
           player={currentPlayer}
           phase={roomState.phase}
